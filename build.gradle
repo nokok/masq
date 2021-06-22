@@ -1,0 +1,64 @@
+plugins {
+  id 'java'
+  id 'jacoco'
+  id 'application'
+  id 'org.mikeneck.graalvm-native-image' version 'v1.4.0'
+  id "com.github.johnrengelman.shadow" version "7.0.0"
+}
+
+repositories {
+  mavenCentral()
+}
+
+java {
+  toolchain {
+    languageVersion = JavaLanguageVersion.of(16)
+  }
+}
+
+dependencies {
+  implementation("com.github.jsqlparser:jsqlparser:4.0")
+  testImplementation(platform('org.junit:junit-bom:5.7.2'))
+  testImplementation('org.junit.jupiter:junit-jupiter')
+}
+
+test {
+  useJUnitPlatform()
+  testLogging {
+    events "passed", "skipped", "failed"
+  }
+  finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+  dependsOn test
+}
+
+tasks.withType(AbstractCompile)*.options*.encoding = tasks.withType(GroovyCompile)*.groovyOptions*.encoding = 'UTF-8'
+
+import org.mikeneck.graalvm.BuildTypeSelector
+
+def applicationName = 'masq'
+mainClassName = 'net.nokok.masq.cli.Main'
+
+nativeImage {
+  graalVmHome = System.getProperty('java.home')
+  arguments(
+    "-H:IncludeResourceBundles=net.nokok.masq.cli.help.messages"
+  )
+  buildType { BuildTypeSelector build ->
+    build.executable {
+      main = mainClassName
+    }
+  }
+  executableName = applicationName
+  outputDirectory = file("${projectDir}/build/bin")
+}
+
+shadowJar {
+  mainClassName = project.mainClassName
+}
+
+startShadowScripts {
+  applicationName = applicationName
+}

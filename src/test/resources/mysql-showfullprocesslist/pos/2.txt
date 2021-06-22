@@ -1,0 +1,9 @@
+*************************** 1. row ***************************
+     Id: 1
+   User: system user
+   Host:
+     db: NULL
+Command: Connect
+   Time: 1030455
+  State: Waiting for master to send event
+   Info: SELECT USER_NAME FROM USERS WHERE USER_NAME = 'Alice'
