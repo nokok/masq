@@ -21,10 +21,14 @@ import java.util.List;
 import java.util.Objects;
 
 public class JsqlStatement {
-  private final Context context;
+  private final String replaceString;
 
   public JsqlStatement(Context context) {
-    this.context = Objects.requireNonNull(context);
+    this.replaceString = Objects.requireNonNull(context).replaceString();
+  }
+
+  public JsqlStatement(String replaceString) {
+    this.replaceString = Objects.requireNonNull(replaceString);
   }
 
   public void execute(Statement statement) {
@@ -35,7 +39,7 @@ public class JsqlStatement {
     sqlInfo.accept(new ReplaceStatement());
   }
 
-  class ReplaceStatement extends StatementVisitorAdapter {
+  private class ReplaceStatement extends StatementVisitorAdapter {
     @Override
     public void visit(Update update) {
       List<Expression> replacedExpressions = new ArrayList<>();
@@ -44,6 +48,7 @@ public class JsqlStatement {
         replacedExpressions.add(expression);
       }
       update.setExpressions(replacedExpressions);
+      update.getWhere().accept(new ReplaceExpression());
     }
 
     @Override
@@ -65,7 +70,7 @@ public class JsqlStatement {
 
     @Override
     public void visit(Insert insert) {
-      insert.getItemsList().accept(new ItemsListVisitorAdapter(){
+      insert.getItemsList().accept(new ItemsListVisitorAdapter() {
         @Override
         public void visit(ExpressionList expressionList) {
           List<Expression> replacedExpressions = new ArrayList<>();
@@ -79,15 +84,15 @@ public class JsqlStatement {
     }
   }
 
-  class ReplaceExpression extends ExpressionVisitorAdapter {
+  private class ReplaceExpression extends ExpressionVisitorAdapter {
     @Override
     public void visit(StringValue value) {
-      value.setValue(context.replaceString());
+      value.setValue(replaceString);
     }
 
     @Override
     public void visit(LongValue value) {
-      value.setStringValue(context.replaceString());
+      value.setStringValue(replaceString);
     }
 
     @Override
@@ -98,16 +103,6 @@ public class JsqlStatement {
         expressions.add(expression);
       }
       valueListExpression.getExpressionList().setExpressions(expressions);
-    }
-
-    @Override
-    public void visit(EqualsTo expr) {
-      expr.accept(new ExpressionVisitorAdapter() {
-        @Override
-        public void visit(StringValue value) {
-          value.setValue(context.replaceString());
-        }
-      });
     }
   }
 }
