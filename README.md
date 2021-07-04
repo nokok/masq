@@ -4,6 +4,8 @@ masq is a command line tool to erase sensitive information in SQL/MySQL Process 
 
 # Examples
 
+## 1. Plain SQL
+
 ```bash
 $ cat select_users_by_name.sql
 SELECT
@@ -17,6 +19,12 @@ WHERE
 ```bash
 $ masq -t sql select_users_by_name.sql
 SELECT * FROM users WHERE user_name = '<mask>'
+```
+
+## 2. MySQL Full Process List
+
+```bash
+$ masq -t mysql/process-list processlist.txt > masked_result
 ```
 
 # Usage
