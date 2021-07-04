@@ -1,34 +1,47 @@
 package net.nokok.masq.impl.mask.jsqlparser;
 
+import net.nokok.masq.cli.Flag;
+import net.nokok.masq.cli.Flags;
 import net.nokok.masq.cli.context.Context;
 import net.nokok.masq.impl.mysql.fullprocesslist.file.ParsedSQLInfo;
 import net.sf.jsqlparser.expression.*;
+import net.sf.jsqlparser.expression.operators.arithmetic.IntegerDivision;
 import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
 import net.sf.jsqlparser.expression.operators.relational.ExpressionList;
+import net.sf.jsqlparser.expression.operators.relational.InExpression;
 import net.sf.jsqlparser.expression.operators.relational.ItemsListVisitorAdapter;
+import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.StatementVisitorAdapter;
 import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.insert.Insert;
-import net.sf.jsqlparser.statement.select.PlainSelect;
-import net.sf.jsqlparser.statement.select.Select;
-import net.sf.jsqlparser.statement.select.SelectVisitorAdapter;
-import net.sf.jsqlparser.statement.select.SubSelect;
+import net.sf.jsqlparser.statement.replace.Replace;
+import net.sf.jsqlparser.statement.select.*;
 import net.sf.jsqlparser.statement.update.Update;
+import net.sf.jsqlparser.statement.values.ValuesStatement;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
 public class JsqlStatement {
   private final String replaceString;
+  private final boolean collapseSelectColumns;
+  private final boolean collapseInExpressions;
 
   public JsqlStatement(Context context) {
-    this.replaceString = Objects.requireNonNull(context).replaceString();
+    this(context.replaceString(), context.flags());
   }
 
   public JsqlStatement(String replaceString) {
+    this(replaceString, new Flags(Collections.emptySet()));
+  }
+
+  public JsqlStatement(String replaceString, Flags flags) {
     this.replaceString = Objects.requireNonNull(replaceString);
+    this.collapseSelectColumns = flags.has(Flag.COLLAPSE_LONG_SELECT_COLUMNS);
+    this.collapseInExpressions = flags.has(Flag.COLLAPSE_LONG_IN_EXPRESSIONS);
   }
 
   public void execute(Statement statement) {
@@ -39,7 +52,87 @@ public class JsqlStatement {
     sqlInfo.accept(new ReplaceStatement());
   }
 
-  private class ReplaceStatement extends StatementVisitorAdapter {
+  static class CollapseExpressions extends ItemsListVisitorAdapter {
+    @Override
+    public void visit(ExpressionList expressionList) {
+      expressionList.setExpressions(List.of(new StringValue("<" + expressionList.getExpressions().size() + " items>")));
+    }
+  }
+
+  class ReplaceSelect extends SelectVisitorAdapter {
+    @Override
+    public void visit(PlainSelect plainSelect) {
+      if (collapseSelectColumns) {
+        plainSelect.setSelectItems(List.of(new AllColumns()));
+      }
+      if (plainSelect.getWhere() != null) {
+        plainSelect.getWhere().accept(new ReplaceExpression());
+      }
+
+      FromItem fromItem = plainSelect.getFromItem();
+      if (fromItem != null) {
+        fromItem.accept(new FromItemVisitorAdapter() {
+          @Override
+          public void visit(LateralSubSelect lateralSubSelect) {
+            lateralSubSelect.getSubSelect().getSelectBody().accept(new ReplaceSelect());
+          }
+
+          @Override
+          public void visit(ParenthesisFromItem aThis) {
+            aThis.accept(this);
+            aThis.getFromItem().accept(this);
+          }
+
+          @Override
+          public void visit(SubJoin subjoin) {
+            if (subjoin.getLeft() != null) {
+              subjoin.getLeft().accept(this);
+            }
+            List<Join> joins = new ArrayList<>();
+            for (Join join : subjoin.getJoinList()) {
+              if (join.getRightItem() != null) {
+                join.getRightItem().accept(this);
+              }
+              if (join.getOnExpression() != null) {
+                join.getOnExpression().accept(new ReplaceExpression());
+              }
+              joins.add(join);
+            }
+            subjoin.setJoinList(joins);
+          }
+
+          @Override
+          public void visit(SubSelect subSelect) {
+            subSelect.getSelectBody().accept(new ReplaceSelect());
+          }
+        });
+      }
+
+      if (plainSelect.getJoins() != null) {
+        List<Join> joins = new ArrayList<>();
+        for (Join join : plainSelect.getJoins()) {
+          if (join.getOnExpression() != null) {
+            join.getOnExpression().accept(new ReplaceExpression());
+          }
+          joins.add(join);
+        }
+        plainSelect.setJoins(joins);
+      }
+    }
+
+    // union
+    @Override
+    public void visit(SetOperationList setOpList) {
+      List<SelectBody> selects = new ArrayList<>();
+      for (SelectBody selectBody : setOpList.getSelects()) {
+        selectBody.accept(new ReplaceSelect());
+        selects.add(selectBody);
+      }
+      setOpList.setSelects(selects);
+    }
+  }
+
+  class ReplaceStatement extends StatementVisitorAdapter {
     @Override
     public void visit(Update update) {
       List<Expression> replacedExpressions = new ArrayList<>();
@@ -58,14 +151,15 @@ public class JsqlStatement {
 
     @Override
     public void visit(Select select) {
-      select.getSelectBody().accept(new SelectVisitorAdapter() {
-        @Override
-        public void visit(PlainSelect plainSelect) {
-          if (plainSelect.getWhere() != null) {
-            plainSelect.getWhere().accept(new ReplaceExpression());
+      if (collapseSelectColumns) {
+        select.getSelectBody().accept(new SelectVisitorAdapter() {
+          @Override
+          public void visit(PlainSelect plainSelect) {
+            plainSelect.setSelectItems(List.of(new AllColumns()));
           }
-        }
-      });
+        });
+      }
+      select.getSelectBody().accept(new ReplaceSelect());
     }
 
     @Override
@@ -84,15 +178,39 @@ public class JsqlStatement {
     }
   }
 
-  private class ReplaceExpression extends ExpressionVisitorAdapter {
+  class ReplaceExpression extends ExpressionVisitorAdapter {
     @Override
     public void visit(StringValue value) {
       value.setValue(replaceString);
     }
 
     @Override
+    public void visit(SubSelect subSelect) {
+      subSelect.getSelectBody().accept(new ReplaceSelect());
+    }
+
+    @Override
     public void visit(LongValue value) {
-      value.setStringValue(replaceString);
+      value.setValue(-1);
+    }
+
+    @Override
+    public void visit(InExpression expr) {
+      if (expr.getLeftItemsList() != null) {
+        expr.getLeftItemsList().accept(new ReplaceExpression());
+      }
+      if (expr.getRightItemsList() != null) {
+        expr.getRightItemsList().accept(new ReplaceExpression());
+      }
+
+      if (collapseInExpressions) {
+        if (expr.getLeftItemsList() != null) {
+          expr.getLeftItemsList().accept(new CollapseExpressions());
+        }
+        if (expr.getRightItemsList() != null) {
+          expr.getRightItemsList().accept(new CollapseExpressions());
+        }
+      }
     }
 
     @Override

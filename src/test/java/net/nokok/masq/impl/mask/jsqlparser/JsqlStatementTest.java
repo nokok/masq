@@ -21,7 +21,7 @@ class JsqlStatementTest {
   @Test
   public void testSql() throws IOException {
     JsqlStatement s = new JsqlStatement("<masked>");
-    List<Path> testCaseFilePaths = Files.list(Paths.get("src/test/resources/mask/sql")).toList();
+    List<Path> testCaseFilePaths = Files.find(Paths.get("src/test/resources/mask/sql"), Integer.MAX_VALUE, (filePath, fileAttr) -> fileAttr.isRegularFile()).toList();
     for (Path testCaseFilePath : testCaseFilePaths) {
       try {
         Statement parsedStatement = parse(testCaseFilePath);
