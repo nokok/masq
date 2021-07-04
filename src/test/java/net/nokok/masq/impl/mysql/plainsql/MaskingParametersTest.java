@@ -10,6 +10,7 @@ import net.sf.jsqlparser.statement.Statement;
 import org.junit.jupiter.api.Test;
 
 import java.io.PrintStream;
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -33,7 +34,7 @@ public class MaskingParametersTest {
 
     @Override
     public Flags flags() {
-      return null;
+      return new Flags(Collections.emptySet());
     }
 
     @Override
@@ -75,7 +76,7 @@ public class MaskingParametersTest {
     )).result().get();
     MaskingParameters maskParameters = new MaskingParameters(this.dummyContext, statement);
     maskParameters.execute();
-    assertEquals("UPDATE users SET user_name = '<masked>' WHERE user_id = 1", statement.toString());
+    assertEquals("UPDATE users SET user_name = '<masked>' WHERE user_id = -1", statement.toString());
   }
 
   @Test
