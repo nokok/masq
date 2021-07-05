@@ -1,6 +1,7 @@
 package net.nokok.masq.cli.help;
 
 import net.nokok.masq.cli.Option;
+import net.nokok.masq.cli.OptionResourceBundle;
 import net.nokok.masq.cli.SupportOptionSet;
 import net.nokok.masq.impl.SupportedFileTypes;
 
@@ -9,13 +10,15 @@ import java.util.*;
 
 public class ShowHelp {
   private final PrintStream console;
+  private final OptionResourceBundle resourceBundle;
 
   public ShowHelp() {
-    this.console = System.out;
+    this(System.out);
   }
 
   public ShowHelp(PrintStream out) {
     this.console = Objects.requireNonNull(out);
+    this.resourceBundle = new OptionResourceBundle(Locale.getDefault());
   }
 
   public void printHelp() {

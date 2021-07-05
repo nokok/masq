@@ -6,6 +6,10 @@ public enum Option {
   REPLACE_STRING("option.replace_string", String.class, "--replace", "-r"),
   INPUT_FORMAT("option.input_format", String.class, "--input-type", "-t"),
   LIMIT_QUERY_SIZE("option.query_size_limit", int.class, "--limit-query-size", "-l"),
+  PARSE_ERROR_FILE_OUTPUT_PATH("option.parse_error_file_output_path", String.class, "--error-output", null),
+  OUTPUT_FORMAT("option.output_format", String.class, "--format", "-f"),
+  COLLAPSE_LONG_SELECT_COLUMNS("option.collapse_long_select_columns", boolean.class, "--c:select", null),
+  COLLAPSE_LONG_IN_EXPRESSIONS("option.collapse_long_in_expressions", boolean.class, "--c:inExpr", null),
   HELP("option.help", boolean.class, "--help", "-h"),
   ;
 
