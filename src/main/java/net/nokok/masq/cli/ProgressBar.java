@@ -10,15 +10,19 @@ public class ProgressBar {
   }
 
   public void increment(int current) {
+    if (this.current + current > max) {
+      complete();
+      return;
+    }
     this.current += current;
   }
 
-  public void setMax() {
+  public void complete() {
     this.current = max;
   }
 
   public void printProgress() {
-    double percent = ((double)current / max) * 100;
+    double percent = ((double) current / max) * 100;
     System.err.print("\b".repeat(lastProgressBarLength));
     String progressbar = "[%-100s] %.1f%% %s/%s".formatted("#".repeat((int) percent), percent, current, max);
     lastProgressBarLength = progressbar.length();

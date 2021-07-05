@@ -17,7 +17,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -115,7 +114,7 @@ public class ParseMySQLFullProcessList implements Parser<MySQLFullProcessList> {
           d.ifPresent(rows::add);
         }
       }
-      progressBar.setMax();
+      progressBar.complete();
       progressBar.printProgress();
       scheduledExecutorService.shutdown();
       LogPerDate l = new LogPerDate(localDateTime, rows);
