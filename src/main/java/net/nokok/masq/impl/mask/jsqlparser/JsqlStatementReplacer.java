@@ -5,40 +5,35 @@ import net.nokok.masq.cli.Flags;
 import net.nokok.masq.cli.context.Context;
 import net.nokok.masq.impl.mysql.fullprocesslist.file.ParsedSQLInfo;
 import net.sf.jsqlparser.expression.*;
-import net.sf.jsqlparser.expression.operators.arithmetic.IntegerDivision;
-import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
 import net.sf.jsqlparser.expression.operators.relational.ExpressionList;
 import net.sf.jsqlparser.expression.operators.relational.InExpression;
 import net.sf.jsqlparser.expression.operators.relational.ItemsListVisitorAdapter;
-import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.StatementVisitorAdapter;
 import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.insert.Insert;
-import net.sf.jsqlparser.statement.replace.Replace;
 import net.sf.jsqlparser.statement.select.*;
 import net.sf.jsqlparser.statement.update.Update;
-import net.sf.jsqlparser.statement.values.ValuesStatement;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-public class JsqlStatement {
+public class JsqlStatementReplacer {
   private final String replaceString;
   private final boolean collapseSelectColumns;
   private final boolean collapseInExpressions;
 
-  public JsqlStatement(Context context) {
+  public JsqlStatementReplacer(Context context) {
     this(context.replaceString(), context.flags());
   }
 
-  public JsqlStatement(String replaceString) {
+  public JsqlStatementReplacer(String replaceString) {
     this(replaceString, new Flags(Collections.emptySet()));
   }
 
-  public JsqlStatement(String replaceString, Flags flags) {
+  public JsqlStatementReplacer(String replaceString, Flags flags) {
     this.replaceString = Objects.requireNonNull(replaceString);
     this.collapseSelectColumns = flags.has(Flag.COLLAPSE_LONG_SELECT_COLUMNS);
     this.collapseInExpressions = flags.has(Flag.COLLAPSE_LONG_IN_EXPRESSIONS);

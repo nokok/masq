@@ -4,7 +4,6 @@ import net.nokok.masq.cli.context.Context;
 import net.nokok.masq.impl.MasqProcess;
 import net.nokok.masq.impl.ParseResults;
 import net.nokok.masq.impl.Parser;
-import net.nokok.masq.impl.mask.jsqlparser.JsqlStatement;
 import net.nokok.masq.impl.mysql.fullprocesslist.file.LogPerDate;
 import net.nokok.masq.impl.mysql.fullprocesslist.file.MySQLFullProcessList;
 import net.nokok.masq.impl.mysql.fullprocesslist.file.RowData;

@@ -14,13 +14,13 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.fail;
 
-class JsqlStatementTest {
+class JsqlStatementReplacerTest {
   private static final String SENSITIVE_DATA_STRING = "Sensitive Data";
   private static final int SENSITIVE_DATA_NUMBER = 42;
 
   @Test
   public void testSql() throws IOException {
-    JsqlStatement s = new JsqlStatement("<masked>");
+    JsqlStatementReplacer s = new JsqlStatementReplacer("<masked>");
     List<Path> testCaseFilePaths = Files.find(Paths.get("src/test/resources/mask/sql"), Integer.MAX_VALUE, (filePath, fileAttr) -> fileAttr.isRegularFile()).toList();
     for (Path testCaseFilePath : testCaseFilePaths) {
       try {
