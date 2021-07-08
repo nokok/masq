@@ -1,12 +1,24 @@
 package net.nokok.masq.cli;
 
+import java.io.PrintStream;
+import java.util.Objects;
+
 public class ProgressBar {
   private final int max;
+  private final PrintStream console;
   private int current = 0;
   private int lastProgressBarLength = 0;
 
   public ProgressBar(int max) {
+    this(max, System.err);
+  }
+
+  public ProgressBar(int max, PrintStream console) {
+    if (max <= 0) {
+      throw new IllegalArgumentException("Negative value: max=" + max);
+    }
     this.max = max;
+    this.console = Objects.requireNonNull(console);
   }
 
   public void increment(int current) {
@@ -22,10 +34,10 @@ public class ProgressBar {
   }
 
   public void printProgress() {
-    double percent = ((double) current / max) * 100;
-    System.err.print("\b".repeat(lastProgressBarLength));
-    String progressbar = "[%-100s] %.1f%% %s/%s".formatted("#".repeat((int) percent), percent, current, max);
+    double percent = ((double) current / max) * 50;
+    console.print("\b".repeat(lastProgressBarLength));
+    String progressbar = "[%-50s] %.1f%% %s/%s".formatted("#".repeat((int) percent), percent * 2, current, max);
     lastProgressBarLength = progressbar.length();
-    System.err.print(progressbar);
+    console.print(progressbar);
   }
 }
