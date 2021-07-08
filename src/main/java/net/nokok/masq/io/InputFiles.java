@@ -5,6 +5,7 @@ import net.nokok.masq.impl.SupportedFileTypes;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -34,6 +35,17 @@ public class InputFiles {
 
   public void forEach(Consumer<? super InputFile> action) {
     this.files.forEach(action);
+  }
+
+  public int count() {
+    return this.files.size();
+  }
+
+  public Optional<InputFile> get(int index) {
+    if (this.count() <= index) {
+      throw new IllegalArgumentException();
+    }
+    return Optional.of(this.files.get(0));
   }
 
   @Override

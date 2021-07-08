@@ -20,4 +20,8 @@ public class Flags {
     return String.format(
       "Flags (flags=%s)", this.flags);
   }
+
+  public boolean isEmpty() {
+    return this.flags.isEmpty();
+  }
 }

@@ -19,6 +19,10 @@ import java.util.Objects;
 public class ArgsParser {
   private final SupportOptionSet supportOptionSet;
 
+  public ArgsParser() {
+    this(SupportOptionSet.DEFAULT);
+  }
+
   public ArgsParser(SupportOptionSet supportOptionSet) {
     this.supportOptionSet = supportOptionSet;
   }
